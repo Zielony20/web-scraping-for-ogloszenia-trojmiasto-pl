@@ -22,6 +22,8 @@ class homeObject:
         self.Kuchnia=False
         self.Woda=False
         self.Kanalizacja=False
+        self.Winda=False
+        self.Internet=False
 
 
         try:
@@ -111,6 +113,30 @@ class homeObject:
             for addon in additional_text:
                 print(addon.getText())
 
+                if(addon.getText().count("Piwnica")>0):
+                    self.Piwnica=True 
+                if(addon.getText().count("Miejsce parkingowe")>0):
+                    self.Miejsce_parkingowe=True 
+                if(addon.getText().count("Dwu poziomowe")>0):
+                    self.Dwupoziomowe=True
+                if(addon.getText().count("Balkon")>0):
+                    self.Balkon=True
+                if(addon.getText().count("Gaz")>0):
+                    self.Gaz=True
+                if(addon.getText().count("Siła")>0):
+                    self.Sila=True
+                if(addon.getText().count("Aneks kuchenny")>0):
+                    self.Aneks_kuchenny=True
+                if(addon.getText().count("Kuchnia")>0):
+                    self.Kuchnia=True
+                if(addon.getText().count("Woda")>0):
+                    self.Woda=True
+                if(addon.getText().count("Kanalizacja")>0):
+                    self.Kanalizacja=True
+                if(addon.getText().count("Winda")>0):
+                    self.Winda=False
+                if(addon.getText().count("Internet")>0):
+                    self.Internet=False
 
             #self.additional_text = additional_text.find('span',{'class','oglField__value'}).getText()
             
@@ -142,12 +168,40 @@ class homeObject:
         return self.price
 
 
+    # Dodatkowe informacje
+    # informacje po polsku zmienne po polsku
+    def getBasement(self):
+        return self.Piwnica
+    def getParkingPlace(self):
+        return self.Miejsce_parkingowe
+    def getTwoLevel(self): 
+        return self.Dwupoziomowe
+    def getBalcon(self):
+        return self.Balkon
+    def getGas(self):
+        return self.Gaz
+    def getSila(self):
+        return self.Sila
+    def getKitchenette(self):
+        return self.Aneks_kuchenny
+    def getKichen(self):
+        return self.Kuchnia
+    def getWater(self):
+        return self.Woda
+    def getSewerage(self):
+        return self.Kanalizacja
+    def getElevator(self):
+        return self.Winda
+    def getInternet(self):
+        return self.Internet
+
+
 
 class trojmiastopl:
     def __init__(new_pages=500):
-
-        New_houses = []
-        d={'house_name':[],'price':[],'price_for_meter':[],'area':[],'link':[]}
+        self.houses = pd.DateFrame()
+        
+        #d={'house_name':[],'price':[],'price_for_meter':[],'area':[],'link':[]}
 
         for page_num in range(new_pages):
             sleep(1)
@@ -182,7 +236,8 @@ class trojmiastopl:
 
         DetailsHandler = homeObject(link)
 
-        New_house = {'house_name':home_name,
+        New_house = {
+        'house_name':home_name,
         'price':price,
         'price_for_meter':price_per_meter,
         'area':space,
@@ -190,22 +245,34 @@ class trojmiastopl:
         'address':DetailsHandler.getAddress(),
         'year_of_building':DetailsHandler.BuildingYear(),
         'type_of_heating':DetailsHandler.getHeatingType(),
-        'state':'',                 #po remoncie lub przed
+        'state':'unknown',                 #po remoncie lub przed
         'property_type':DetailsHandler.getPropertyType(),
         'floors':DetailsHandler.getNumberFloors(),
-        'basement':'',
-        'parking':'',
-        'two-level':''
+        'basement':DetailsHandler.getBasement(),
+        'parking':DetailsHandler.getParkingPlace(),
+        'two-level':DetailsHandler.getTwoLevel(),
+        'balcon': DetailsHandler.getBalcon(),
+        'Gas': DetailsHandler.getGas(),
+        'SIŁA':DetailsHandler.getSila(),
+        'Kitchenette':DetailsHandler.getKitchenette(),
+        'Kichen':DetailsHandler.getKichen(),
+        'Sewerage':DetailsHandler.getSewerage(),
+        'Elevator':DetailsHandler.getElevator(),
+        'Internet':DetailsHandler.getInternet()
         }
-
-        New_houses.append(New_house)
-
+        temp_house = pd.DateFrame(data=New_house)
+        self.houses = self.houses.append(temp_house, ignore_index=True)
+        #New_houses.append(New_house)
+        
+    def save(self):
+        self.houses.to_csv('out.csv',index=False)
+        
 #dh = homeObject('https://ogloszenia.trojmiasto.pl/nieruchomosci-rynek-wtorny/sloneczne-i-przestrzenne-dwupoziomowe-mieszkanie-ogl64294270.html')
 dh = homeObject('https://ogloszenia.trojmiasto.pl/nieruchomosci-rynek-wtorny/urokliwy-dom-w-sercu-miasta-ogl64254904.html')
 
 print(dh.getPricePerMeter())
 print(dh.getRoomsNumber())
-
+print(dh.getBalcon())
 
 
 
