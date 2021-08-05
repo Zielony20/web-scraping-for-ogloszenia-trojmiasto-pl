@@ -3,7 +3,8 @@ from numpy import add
 import requests
 import pandas as pd
 from time import sleep
-
+from tqdm import trange
+import os
 class homeObject:
     
     def __init__(self,link):
@@ -11,6 +12,8 @@ class homeObject:
 
         self.page = requests.get(self.page_url)
         soup = BeautifulSoup(self.page.content, 'html.parser')
+
+        
 
         self.Piwnica=False 
         self.Miejsce_parkingowe=False 
@@ -54,7 +57,7 @@ class homeObject:
             self.building_year = building_year.find('span',{'class','oglField__value'}).getText()
             
         except(TypeError, AttributeError):
-            self.number_floors = ''
+            self.building_year = ''
         
         try:
             heating_type = soup.find('div',{'class':'oglField oglField--typ_ogrzewania'})  
@@ -111,7 +114,7 @@ class homeObject:
             additional_text = soup.find('div',{'class':'oglField oglField--array'}) 
             additional_text = additional_text.find_all('li',{'class':'oglFieldList__item'}) 
             for addon in additional_text:
-                print(addon.getText())
+                #print(addon.getText())
 
                 if(addon.getText().count("Piwnica")>0):
                     self.Piwnica=True 
@@ -123,7 +126,7 @@ class homeObject:
                     self.Balkon=True
                 if(addon.getText().count("Gaz")>0):
                     self.Gaz=True
-                if(addon.getText().count("Siła")>0):
+                if(addon.getText().count("Power")>0):
                     self.Sila=True
                 if(addon.getText().count("Aneks kuchenny")>0):
                     self.Aneks_kuchenny=True
@@ -198,13 +201,14 @@ class homeObject:
 
 
 class trojmiastopl:
-    def __init__(new_pages=500):
-        self.houses = pd.DateFrame()
-        
+    def __init__(self,new_pages=500):
+        self.houses = pd.DataFrame(columns=['house_name','price','price_for_meter','area','link','address','year_of_building','type_of_heating','state','property_type','floors','basement','parking','two-level','balcon','Gas','Power','Kitchenette','Kichen','Sewerage','Elevator','Internet'])
+        self.temp_house = pd.DataFrame()
+        self.pwd = os.getcwd()
         #d={'house_name':[],'price':[],'price_for_meter':[],'area':[],'link':[]}
 
-        for page_num in range(new_pages):
-            sleep(1)
+        for page_num in trange(new_pages):
+            sleep(0.5)
             page_url = "https://ogloszenia.trojmiasto.pl/nieruchomosci-rynek-wtorny/?strona="+str(page_num)
             
             page = requests.get(page_url)
@@ -234,55 +238,58 @@ class trojmiastopl:
                 except(TypeError, AttributeError):
                     space=''
 
-        DetailsHandler = homeObject(link)
-
-        New_house = {
-        'house_name':home_name,
-        'price':price,
-        'price_for_meter':price_per_meter,
-        'area':space,
-        'link':link,
-        'address':DetailsHandler.getAddress(),
-        'year_of_building':DetailsHandler.BuildingYear(),
-        'type_of_heating':DetailsHandler.getHeatingType(),
-        'state':'unknown',                 #po remoncie lub przed
-        'property_type':DetailsHandler.getPropertyType(),
-        'floors':DetailsHandler.getNumberFloors(),
-        'basement':DetailsHandler.getBasement(),
-        'parking':DetailsHandler.getParkingPlace(),
-        'two-level':DetailsHandler.getTwoLevel(),
-        'balcon': DetailsHandler.getBalcon(),
-        'Gas': DetailsHandler.getGas(),
-        'SIŁA':DetailsHandler.getSila(),
-        'Kitchenette':DetailsHandler.getKitchenette(),
-        'Kichen':DetailsHandler.getKichen(),
-        'Sewerage':DetailsHandler.getSewerage(),
-        'Elevator':DetailsHandler.getElevator(),
-        'Internet':DetailsHandler.getInternet()
-        }
-        temp_house = pd.DateFrame(data=New_house)
-        self.houses = self.houses.append(temp_house, ignore_index=True)
-        #New_houses.append(New_house)
+                DetailsHandler = homeObject(link)
+                #sleep(0.5)
+                New_house = {
+                'house_name':home_name,
+                'price':price,
+                'price_for_meter':price_per_meter,
+                'area':space,
+                'link':link,
+                'address':DetailsHandler.getAddress(),
+                'year_of_building':DetailsHandler.getBuildingYear(),
+                'type_of_heating':DetailsHandler.getHeatingType(),
+                'state':'unknown',                 #po remoncie lub przed
+                'property_type':DetailsHandler.getPropertyType(),
+                'floors':DetailsHandler.getNumberFloors(),
+                'basement':DetailsHandler.getBasement(),
+                'parking':DetailsHandler.getParkingPlace(),
+                'two-level':DetailsHandler.getTwoLevel(),
+                'balcon': DetailsHandler.getBalcon(),
+                'Gas': DetailsHandler.getGas(),
+                'Power':DetailsHandler.getSila(),
+                'Kitchenette':DetailsHandler.getKitchenette(),
+                'Kichen':DetailsHandler.getKichen(),
+                'Sewerage':DetailsHandler.getSewerage(),
+                'Elevator':DetailsHandler.getElevator(),
+                'Internet':DetailsHandler.getInternet()
+                }
+                #df.append({'A': i}, ignore_index=True)
+                #temp_house = pd.DataFrame( list(New_house.value) ,columns = [ v for k,v in New_house.items ] )
+                #print(New_house)
+                #self.temp_house = self.temp_house.append(New_house, ignore_index=True)
+                self.houses = self.houses.append(New_house, ignore_index=True)
+                #New_houses.append(New_house)
         
     def save(self):
-        self.houses.to_csv('out.csv',index=False)
-        
+        print('save to '+self.pwd+'/out.csv')
+        self.houses.to_csv(self.pwd+'/out.csv',index=False)
+    def getDataFrame(self):
+        return self.houses
 #dh = homeObject('https://ogloszenia.trojmiasto.pl/nieruchomosci-rynek-wtorny/sloneczne-i-przestrzenne-dwupoziomowe-mieszkanie-ogl64294270.html')
-dh = homeObject('https://ogloszenia.trojmiasto.pl/nieruchomosci-rynek-wtorny/urokliwy-dom-w-sercu-miasta-ogl64254904.html')
 
-print(dh.getPricePerMeter())
-print(dh.getRoomsNumber())
-print(dh.getBalcon())
+#dh = homeObject('https://ogloszenia.trojmiasto.pl/nieruchomosci-rynek-wtorny/urokliwy-dom-w-sercu-miasta-ogl64254904.html')
 
-
-
+#print(dh.getPricePerMeter())
+#print(dh.getRoomsNumber())
+#print(dh.getBalcon())
 
 
 
+t = trojmiastopl(500)
+t.save()
 
-
-
-
+print(t.getDataFrame())
 
 
 
